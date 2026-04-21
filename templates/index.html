@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Recon System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#000;font-family:'Share Tech Mono',monospace;color:#00ff41;min-height:100vh;padding:20px;position:relative;overflow-x:hidden}
+        #scanline{position:fixed;top:0;left:0;width:100%;height:2px;background:rgba(0,255,65,0.15);animation:scan 4s linear infinite;pointer-events:none;z-index:99}
+        @keyframes scan{0%{top:0}100%{top:100%}}
+        #header{border:1px solid #00ff41;padding:12px 16px;margin-bottom:16px;position:relative}
+        #header::before{content:'[ SYS://NETWORK_RECON v2.7 ]';font-size:11px;color:#00ff41;opacity:.7;display:block;margin-bottom:4px}
+        #header h1{font-size:18px;letter-spacing:3px;color:#00ff41;text-transform:uppercase}
+        #header .blink{display:inline-block;width:10px;height:16px;background:#00ff41;animation:blink 1s step-end infinite;margin-left:6px;vertical-align:middle}
+        @keyframes blink{50%{opacity:0}}
+        #statusbar{display:flex;flex-wrap:wrap;gap:20px;font-size:11px;color:#00aa2c;margin-bottom:12px;border-bottom:1px solid #003310;padding-bottom:8px}
+        #statusbar .ok{color:#00ff41}
+        #controls{display:flex;gap:10px;margin-bottom:16px;align-items:center}
+        #scanBtn{background:transparent;border:1px solid #00ff41;color:#00ff41;font-family:'Share Tech Mono',monospace;font-size:13px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:.2s}
+        #scanBtn:hover{background:#00ff41;color:#000}
+        #scanBtn:disabled{opacity:.4;cursor:not-allowed}
+        #progress{flex:1;height:4px;background:#001a00;border:1px solid #003310}
+        #progressBar{height:100%;background:#00ff41;width:0%;transition:width .1s}
+        canvas#spider{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:.18;z-index:0}
+        #tableWrap{position:relative;z-index:2}
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        th{background:#001a00;color:#00ff41;border:1px solid #003a10;padding:8px 12px;text-align:left;letter-spacing:2px;font-size:11px}
+        td{border:1px solid #002a08;padding:7px 12px;color:#00cc35;vertical-align:middle}
+        tr:hover td{background:#001500}
+        .badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
+        .badge.online{border:1px solid #00ff41;color:#00ff41}
+        .badge.attacked{border:1px solid #ff4400;color:#ff4400;animation:pulseR .8s infinite}
+        @keyframes pulseR{50%{opacity:.3}}
+        .actbtn{background:transparent;border:1px solid;font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 12px;cursor:pointer;margin-right:4px;letter-spacing:1px;transition:.15s}
+        .atk{color:#ff4400;border-color:#ff4400}
+        .atk:hover{background:#ff4400;color:#000}
+        .stp{color:#00ff41;border-color:#00ff41}
+        .stp:hover{background:#00ff41;color:#000}
+        #log{margin-top:14px;border:1px solid #002a08;padding:10px;max-height:130px;overflow-y:auto;background:#000;position:relative;z-index:2}
+        #log::before{content:'[ ACTIVITY LOG ]';display:block;color:#00aa2c;margin-bottom:6px;letter-spacing:2px;font-size:11px}
+        .logline{padding:1px 0;color:#009922;font-size:11px;opacity:.85}
+        .logline.warn{color:#ff4400}
+        .logline.info{color:#00ccff}
+        #corner{position:fixed;top:12px;right:20px;font-size:10px;color:#003a10;z-index:3;line-height:1.6;text-align:right}
+    </style>
+</head>
+<body>
+<div id="scanline"></div>
+<canvas id="spider"></canvas>
+<div id="corner">LAT: -6.84°<br>LON: 107.52°<br>TZ: WIB+7</div>
+
+<div id="header"><h1>NETWORK RECON SYSTEM<span class="blink"></span></h1></div>
+
+<div id="statusbar">
+    <span>IFACE: <span class="ok">eth0</span></span>
+    <span>MODE: <span class="ok">HYBRID</span></span>
+    <span>STATUS: <span class="ok" id="st">IDLE</span></span>
+    <span>TIME: <span class="ok" id="clk"></span></span>
+</div>
+
+<div id="controls">
+    <button id="scanBtn" onclick="doScan()">&#9658; SCAN JARINGAN</button>
+    <div id="progress"><div id="progressBar"></div></div>
+</div>
+
+<div id="tableWrap">
+    <table id="deviceTable">
+        <thead><tr><th>#</th><th>IP ADDRESS</th><th>MAC ADDRESS</th><th>STATUS</th><th>AKSI</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="5" style="color:#003a10;text-align:center;padding:20px;">// awaiting scan command...</td></tr></tbody>
+    </table>
+</div>
+
+<div id="log"><div id="logBody"></div></div>
+
+<script>
+    let devices = [];
+    const attacked = new Set();
+
+    function updateClock() { document.getElementById('clk').textContent = new Date().toLocaleTimeString('id-ID'); }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function addLog(msg, cls = '') {
+        const d = document.getElementById('logBody');
+        const now = new Date().toLocaleTimeString('id-ID');
+        const el = document.createElement('div');
+        el.className = 'logline ' + cls;
+        el.textContent = `[${now}] ${msg}`;
+        d.appendChild(el);
+        d.scrollTop = d.scrollHeight;
+    }
+
+    async function doScan() {
+        const btn = document.getElementById('scanBtn');
+        btn.disabled = true;
+        document.getElementById('st').textContent = 'SCANNING...';
+        addLog('Initiating scan on network...', 'info');
+
+        try {
+            const res = await fetch('/scan');
+            const data = await res.json();
+            devices = data;
+            document.getElementById('st').textContent = 'COMPLETE';
+            addLog(`Scan complete. Found ${devices.length} devices.`, 'info');
+            renderTable();
+        } catch (e) {
+            addLog('Scan failed: ' + e, 'warn');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function renderTable() {
+        const tb = document.getElementById('tbody');
+        tb.innerHTML = '';
+        devices.forEach((d, i) => {
+            const isAtk = attacked.has(d.ip);
+            const st = isAtk ? '<span class="badge attacked">ATTACKED</span>' : '<span class="badge online">ONLINE</span>';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="color:#004a14">${String(i+1).padStart(2,'0')}</td>
+                <td>${d.ip}</td>
+                <td style="color:#008822">${d.mac}</td>
+                <td>${st}</td>
+                <td>
+                    <button class="actbtn atk" onclick="attack('${d.ip}')">PUTUS</button>
+                    <button class="actbtn stp" onclick="stop('${d.ip}')">STOP</button>
+                </td>`;
+            tb.appendChild(row);
+        });
+    }
+
+    async function attack(ip) {
+        attacked.add(ip);
+        renderTable();
+        addLog(`ARP poison injected → ${ip}`, 'warn');
+        await fetch('/attack', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ip})
+        });
+    }
+
+    async function stop(ip) {
+        attacked.delete(ip);
+        renderTable();
+        addLog(`Stopped attack on ${ip}`, 'info');
+        await fetch('/stop', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ip})
+        });
+    }
+    
+    // Spider Web Canvas (Kept as is for aesthetics)
+    (function spiderWeb() {
+        const cv = document.getElementById('spider');
+        const ctx = cv.getContext('2d');
+        function resize() { cv.width = window.innerWidth; cv.height = window.innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+        const nodes = [];
+        for (let i = 0; i < 22; i++) { nodes.push({ x: Math.random(), y: Math.random(), vx: (Math.random() - .5) * .0003, vy: (Math.random() - .5) * .0003 }); }
+        function draw() {
+            const w = cv.width, h = cv.height;
+            ctx.clearRect(0, 0, w, h);
+            ctx.strokeStyle = '#00ff41'; ctx.lineWidth = .5;
+            for (let a = 0; a < nodes.length; a++) {
+                for (let b = a + 1; b < nodes.length; b++) {
+                    const dx = (nodes[a].x - nodes[b].x) * w, dy = (nodes[a].y - nodes[b].y) * h;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 240) { ctx.globalAlpha = (1 - dist / 240) * .6; ctx.beginPath(); ctx.moveTo(nodes[a].x * w, nodes[a].y * h); ctx.lineTo(nodes[b].x * w, nodes[b].y * h); ctx.stroke(); }
+                }
+            }
+            ctx.globalAlpha = 1; nodes.forEach(n => { ctx.beginPath(); ctx.arc(n.x * w, n.y * h, 2, 0, Math.PI * 2); ctx.fillStyle = '#00ff41'; ctx.fill(); });
+        }
+        function tick() { nodes.forEach(n => { n.x += n.vx; n.y += n.vy; if (n.x < 0 || n.x > 1) n.vx *= -1; if (n.y < 0 || n.y > 1) n.vy *= -1; }); draw(); requestAnimationFrame(tick); }
+        tick();
+    })();
+</script>
+</body>
+</html>
