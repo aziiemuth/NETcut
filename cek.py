@@ -6,7 +6,7 @@ print("Cari baris yang IP-nya sama dengan hasil 'ipconfig' Anda:\n")
 for iface in get_if_list():
     try:
         ip = get_if_addr(iface)
-        # Kita hanya tampilkan yang punya IP
+        # Kita hanya tampilkan yang punya IP.
         if ip and ip != '0.0.0.0':
             print(f"Interface: {iface}")
             print(f"IP       : {ip}")
