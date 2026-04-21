@@ -1,184 +1,752 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Recon System</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Athiief Network Recon</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{background:#000;font-family:'Share Tech Mono',monospace;color:#00ff41;min-height:100vh;padding:20px;position:relative;overflow-x:hidden}
-        #scanline{position:fixed;top:0;left:0;width:100%;height:2px;background:rgba(0,255,65,0.15);animation:scan 4s linear infinite;pointer-events:none;z-index:99}
-        @keyframes scan{0%{top:0}100%{top:100%}}
-        #header{border:1px solid #00ff41;padding:12px 16px;margin-bottom:16px;position:relative}
-        #header::before{content:'[ SYS://NETWORK_RECON v2.7 ]';font-size:11px;color:#00ff41;opacity:.7;display:block;margin-bottom:4px}
-        #header h1{font-size:18px;letter-spacing:3px;color:#00ff41;text-transform:uppercase}
-        #header .blink{display:inline-block;width:10px;height:16px;background:#00ff41;animation:blink 1s step-end infinite;margin-left:6px;vertical-align:middle}
-        @keyframes blink{50%{opacity:0}}
-        #statusbar{display:flex;flex-wrap:wrap;gap:20px;font-size:11px;color:#00aa2c;margin-bottom:12px;border-bottom:1px solid #003310;padding-bottom:8px}
-        #statusbar .ok{color:#00ff41}
-        #controls{display:flex;gap:10px;margin-bottom:16px;align-items:center}
-        #scanBtn{background:transparent;border:1px solid #00ff41;color:#00ff41;font-family:'Share Tech Mono',monospace;font-size:13px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:.2s}
-        #scanBtn:hover{background:#00ff41;color:#000}
-        #scanBtn:disabled{opacity:.4;cursor:not-allowed}
-        #progress{flex:1;height:4px;background:#001a00;border:1px solid #003310}
-        #progressBar{height:100%;background:#00ff41;width:0%;transition:width .1s}
-        canvas#spider{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:.18;z-index:0}
-        #tableWrap{position:relative;z-index:2}
-        table{width:100%;border-collapse:collapse;font-size:12px}
-        th{background:#001a00;color:#00ff41;border:1px solid #003a10;padding:8px 12px;text-align:left;letter-spacing:2px;font-size:11px}
-        td{border:1px solid #002a08;padding:7px 12px;color:#00cc35;vertical-align:middle}
-        tr:hover td{background:#001500}
-        .badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:2px;letter-spacing:1px}
-        .badge.online{border:1px solid #00ff41;color:#00ff41}
-        .badge.attacked{border:1px solid #ff4400;color:#ff4400;animation:pulseR .8s infinite}
-        @keyframes pulseR{50%{opacity:.3}}
-        .actbtn{background:transparent;border:1px solid;font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 12px;cursor:pointer;margin-right:4px;letter-spacing:1px;transition:.15s}
-        .atk{color:#ff4400;border-color:#ff4400}
-        .atk:hover{background:#ff4400;color:#000}
-        .stp{color:#00ff41;border-color:#00ff41}
-        .stp:hover{background:#00ff41;color:#000}
-        #log{margin-top:14px;border:1px solid #002a08;padding:10px;max-height:130px;overflow-y:auto;background:#000;position:relative;z-index:2}
-        #log::before{content:'[ ACTIVITY LOG ]';display:block;color:#00aa2c;margin-bottom:6px;letter-spacing:2px;font-size:11px}
-        .logline{padding:1px 0;color:#009922;font-size:11px;opacity:.85}
-        .logline.warn{color:#ff4400}
-        .logline.info{color:#00ccff}
-        #corner{position:fixed;top:12px;right:20px;font-size:10px;color:#003a10;z-index:3;line-height:1.6;text-align:right}
+      :root {
+        --color-bg: #050a0e;
+        --color-panel: #0a1118;
+        --color-primary: #00ff66;
+        --color-primary-dim: rgba(0, 255, 102, 0.2);
+        --color-danger: #ff3366;
+        --color-text: #a0c0d0;
+        --color-text-bright: #e0f0ff;
+        --color-border: #1a2a3a;
+      }
+      
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      
+      body {
+        background-color: var(--color-bg);
+        background-image: 
+          radial-gradient(circle at 50% 0%, rgba(0, 255, 102, 0.05) 0%, transparent 50%),
+          linear-gradient(rgba(0, 255, 102, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 255, 102, 0.02) 1px, transparent 1px);
+        background-size: 100% 100%, 30px 30px, 30px 30px;
+        font-family: "Inter", sans-serif;
+        color: var(--color-text);
+        min-height: 100vh;
+        padding: 30px;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      .tech-font {
+        font-family: "Share Tech Mono", monospace;
+      }
+
+      /* Scanline Effect */
+      #scanline {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100px;
+        background: linear-gradient(to bottom, transparent, var(--color-primary-dim), transparent);
+        animation: scan 6s linear infinite;
+        pointer-events: none;
+        z-index: 99;
+        opacity: 0.5;
+      }
+      @keyframes scan {
+        0% { top: -100px; }
+        100% { top: 100vh; }
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 2;
+      }
+
+      /* Glass Panel Style */
+      .glass-panel {
+        background: rgba(10, 17, 24, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      }
+
+      /* Header */
+      #header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--color-primary-dim);
+      }
+      #header h1 {
+        font-size: 24px;
+        letter-spacing: 2px;
+        color: var(--color-text-bright);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      #header h1 i {
+        color: var(--color-primary);
+      }
+      .version-tag {
+        font-size: 11px;
+        color: var(--color-primary);
+        background: var(--color-primary-dim);
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 1px;
+      }
+
+      /* Status Bar */
+      #statusbar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+      }
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(0,0,0,0.4);
+        padding: 10px 15px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+      }
+      .status-item i {
+        color: var(--color-text);
+        opacity: 0.7;
+        font-size: 16px;
+      }
+      .status-data {
+        display: flex;
+        flex-direction: column;
+      }
+      .status-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--color-text);
+        opacity: 0.6;
+      }
+      .status-value {
+        font-size: 13px;
+        color: var(--color-primary);
+        font-weight: 600;
+      }
+
+      /* Controls */
+      #controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      
+      .btn {
+        background: rgba(0, 255, 102, 0.1);
+        border: 1px solid var(--color-primary);
+        color: var(--color-primary);
+        font-weight: 600;
+        font-size: 14px;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 0 15px transparent;
+      }
+      .btn:hover {
+        background: var(--color-primary);
+        color: var(--color-bg);
+        box-shadow: 0 0 15px var(--color-primary-dim);
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        box-shadow: none;
+        background: transparent;
+        border-color: var(--color-border);
+        color: var(--color-border);
+      }
+      .btn i {
+        font-size: 16px;
+      }
+
+      .main-card {
+        background: var(--color-bg-light);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 30px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Desktop Modern Table */
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        margin-top: 20px;
+      }
+
+      th {
+        text-align: left;
+        padding: 12px 15px;
+        color: #6a8a9a;
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(0, 255, 102, 0.1);
+      }
+
+      td {
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      }
+
+      td:first-child { border-left: 1px solid rgba(255, 255, 255, 0.03); border-radius: 8px 0 0 8px; }
+      td:last-child { border-right: 1px solid rgba(255, 255, 255, 0.03); border-radius: 0 8px 8px 0; }
+
+      /* Responsive Media Queries */
+      @media (max-width: 768px) {
+        .container {
+          padding: 10px;
+          margin-top: 20px;
+        }
+        
+        header h1 {
+          font-size: 24px;
+        }
+        
+        .main-card {
+          padding: 15px;
+        }
+
+        /* Transform Table to Cards on Mobile */
+        table, thead, tbody, th, td, tr {
+          display: block;
+        }
+        
+        thead {
+          display: none; /* Hide headers on mobile */
+        }
+        
+        tr {
+          margin-bottom: 15px;
+          border: 1px solid rgba(0, 255, 102, 0.2);
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 10px;
+        }
+        
+        td {
+          border: none;
+          padding: 8px 5px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: transparent;
+        }
+
+        td::before {
+          content: attr(data-label);
+          font-weight: bold;
+          color: #6a8a9a;
+          font-size: 10px;
+          text-transform: uppercase;
+          margin-right: 15px;
+        }
+        
+        td:first-child, td:last-child {
+          border-radius: 0;
+        }
+        
+        /* Specific adjustments for buttons and badges on mobile */
+        .actbtn {
+          width: 100%;
+          justify-content: center;
+          margin-top: 5px;
+        }
+        
+        .badge {
+          font-size: 10px;
+        }
+      }
+      
+      tbody tr {
+        border: 1px solid transparent;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      tbody tr:hover td {
+        background: rgba(0, 255, 102, 0.05);
+        cursor: default;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      .badge.online {
+        background: rgba(0, 255, 102, 0.1);
+        color: var(--color-primary);
+        border: 1px solid var(--color-primary-dim);
+      }
+      .badge.attacked {
+        background: rgba(255, 51, 102, 0.1);
+        color: var(--color-danger);
+        border: 1px solid rgba(255, 51, 102, 0.3);
+        animation: pulseDanger 1.5s infinite;
+      }
+      @keyframes pulseDanger {
+        0% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(255, 51, 102, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+      }
+
+      .actbtn {
+        background: transparent;
+        border: 1px solid;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 6px;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .atk {
+        color: var(--color-danger);
+        border-color: rgba(255, 51, 102, 0.4);
+      }
+      .atk:hover {
+        background: var(--color-danger);
+        color: #fff;
+        border-color: var(--color-danger);
+        box-shadow: 0 0 10px rgba(255, 51, 102, 0.4);
+      }
+      .stp {
+        color: var(--color-primary);
+        border-color: rgba(0, 255, 102, 0.4);
+      }
+      .stp:hover {
+        background: var(--color-primary);
+        color: var(--color-bg);
+        border-color: var(--color-primary);
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+      }
+
+      /* Log Panel */
+      #log {
+        background: #030608;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        padding: 15px;
+        height: 150px;
+        overflow-y: auto;
+      }
+      #log::before {
+        content: '\f120 ACTIVITY LOG';
+        font-family: "Font Awesome 6 Free", "Inter", sans-serif;
+        font-weight: 900;
+        display: block;
+        color: var(--color-text);
+        margin-bottom: 10px;
+        font-size: 12px;
+        letter-spacing: 1px;
+        opacity: 0.6;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 8px;
+      }
+      .logline {
+        padding: 3px 0;
+        font-size: 13px;
+        opacity: 0.8;
+      }
+      .logline.warn { color: var(--color-danger); }
+      .logline.info { color: #33aaff; }
+
+      /* SweetAlert Overrides */
+      div:where(.swal2-container) div:where(.swal2-popup) {
+        background: var(--color-panel);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-bright);
+        font-family: "Inter", sans-serif;
+        box-shadow: 0 0 30px rgba(0, 255, 102, 0.1);
+      }
+      .swal2-title { color: var(--color-primary) !important; }
+      .swal-danger-title { color: var(--color-danger) !important; }
+      
+      canvas#spider {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        opacity: 0.1;
+        z-index: 0;
+      }
     </style>
-</head>
-<body>
-<div id="scanline"></div>
-<canvas id="spider"></canvas>
-<div id="corner">LAT: -6.84°<br>LON: 107.52°<br>TZ: WIB+7</div>
+  </head>
+  <body>
+    <div id="scanline"></div>
+    <canvas id="spider"></canvas>
 
-<div id="header"><h1>NETWORK RECON SYSTEM<span class="blink"></span></h1></div>
+    <div class="container">
+      <div id="header" class="glass-panel">
+        <h1 class="tech-font">
+          <i class="fa-solid fa-radar-satellite rotating"></i> 
+          ATHIIEF RECON SYSTEM
+        </h1>
+        <span class="version-tag tech-font">v3.0</span>
+      </div>
 
-<div id="statusbar">
-    <span>IFACE: <span class="ok">eth0</span></span>
-    <span>MODE: <span class="ok">HYBRID</span></span>
-    <span>STATUS: <span class="ok" id="st">IDLE</span></span>
-    <span>TIME: <span class="ok" id="clk"></span></span>
-</div>
+      <div id="statusbar" class="glass-panel tech-font">
+        <div class="status-item">
+          <i class="fa-solid fa-network-wired"></i>
+          <div class="status-data">
+            <span class="status-label">Interface</span>
+            <span class="status-value">AUTO</span>
+          </div>
+        </div>
+        <div class="status-item">
+          <i class="fa-solid fa-shield-halved"></i>
+          <div class="status-data">
+            <span class="status-label">Mode</span>
+            <span class="status-value">AGGRESSIVE</span>
+          </div>
+        </div>
+        <div class="status-item">
+          <i class="fa-solid fa-satellite"></i>
+          <div class="status-data">
+            <span class="status-label">Status</span>
+            <span class="status-value" id="st">IDLE</span>
+          </div>
+        </div>
+        <div class="status-item">
+          <i class="fa-regular fa-clock"></i>
+          <div class="status-data">
+            <span class="status-label">Local Time</span>
+            <span class="status-value" id="clk"></span>
+          </div>
+        </div>
+      </div>
 
-<div id="controls">
-    <button id="scanBtn" onclick="doScan()">&#9658; SCAN JARINGAN</button>
-    <div id="progress"><div id="progressBar"></div></div>
-</div>
+      <div id="controls">
+        <button id="scanBtn" class="btn tech-font" onclick="doScan()">
+          <i class="fa-solid fa-satellite-dish"></i> SCAN JARINGAN
+        </button>
+      </div>
 
-<div id="tableWrap">
-    <table id="deviceTable">
-        <thead><tr><th>#</th><th>IP ADDRESS</th><th>MAC ADDRESS</th><th>STATUS</th><th>AKSI</th></tr></thead>
-        <tbody id="tbody"><tr><td colspan="5" style="color:#003a10;text-align:center;padding:20px;">// awaiting scan command...</td></tr></tbody>
-    </table>
-</div>
+      <div id="tableWrap" class="glass-panel">
+        <table id="deviceTable">
+          <thead>
+            <tr>
+              <th><i class="fa-solid fa-hashtag"></i></th>
+              <th><i class="fa-solid fa-laptop-code"></i> IP ADDRESS</th>
+              <th><i class="fa-solid fa-microchip"></i> MAC ADDRESS</th>
+              <th><i class="fa-solid fa-tag"></i> MEREK/VENDOR</th>
+              <th><i class="fa-solid fa-heart-pulse"></i> STATUS</th>
+              <th><i class="fa-solid fa-bolt"></i> AKSI</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr>
+              <td colspan="6" style="color: #6a8a9a; text-align: center; padding: 40px" class="tech-font">
+                <i class="fa-solid fa-satellite-dish fa-fade" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                Awaiting scan command...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<div id="log"><div id="logBody"></div></div>
+      <div id="log" class="tech-font"><div id="logBody"></div></div>
+    </div>
 
-<script>
-    let devices = [];
-    const attacked = new Set();
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
 
-    function updateClock() { document.getElementById('clk').textContent = new Date().toLocaleTimeString('id-ID'); }
-    setInterval(updateClock, 1000);
-    updateClock();
+    <script>
+      let devices = [];
+      const attacked = new Set();
 
-    function addLog(msg, cls = '') {
-        const d = document.getElementById('logBody');
-        const now = new Date().toLocaleTimeString('id-ID');
-        const el = document.createElement('div');
-        el.className = 'logline ' + cls;
+      function updateClock() {
+        document.getElementById("clk").textContent = new Date().toLocaleTimeString("id-ID");
+      }
+      setInterval(updateClock, 1000);
+      updateClock();
+
+      function addLog(msg, cls = "") {
+        const d = document.getElementById("logBody");
+        const now = new Date().toLocaleTimeString("id-ID");
+        const el = document.createElement("div");
+        el.className = "logline " + cls;
         el.textContent = `[${now}] ${msg}`;
         d.appendChild(el);
         d.scrollTop = d.scrollHeight;
-    }
+      }
 
-    async function doScan() {
-        const btn = document.getElementById('scanBtn');
+      async function doScan() {
+        const btn = document.getElementById("scanBtn");
         btn.disabled = true;
-        document.getElementById('st').textContent = 'SCANNING...';
-        addLog('Initiating scan on network...', 'info');
+        document.getElementById("st").textContent = "SCANNING...";
+        addLog("Initiating deep network scan...", "info");
+        
+        // SweetAlert Loading
+        Swal.fire({
+          title: 'Scanning Network',
+          html: 'Probing subnet boundaries...',
+          timerProgressBar: true,
+          didOpen: () => {
+            Swal.showLoading()
+          },
+          allowOutsideClick: false,
+          background: 'rgba(10, 17, 24, 0.95)',
+          backdrop: `rgba(0,0,0,0.6)`
+        });
 
         try {
-            const res = await fetch('/scan');
-            const data = await res.json();
-            devices = data;
-            document.getElementById('st').textContent = 'COMPLETE';
-            addLog(`Scan complete. Found ${devices.length} devices.`, 'info');
-            renderTable();
+          const res = await fetch("/scan");
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            throw new Error(data.error || "Unknown server error");
+          }
+
+          devices = data;
+          document.getElementById("st").textContent = "COMPLETE (" + devices.length + ")";
+          addLog(`Scan complete. Intercepted ${devices.length} active nodes.`, "info");
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Scan Complete',
+            text: `Found ${devices.length} active devices.`,
+            confirmButtonColor: '#00ff66',
+            background: '#0a1118'
+          });
+          
+          renderTable();
         } catch (e) {
-            addLog('Scan failed: ' + e, 'warn');
+          document.getElementById("st").textContent = "ERROR";
+          addLog("Scan failed: " + e.message, "warn");
+          devices = []; 
+          renderTable();
+          
+          Swal.fire({
+            icon: 'error',
+            title: 'System Error',
+            text: e.message,
+            confirmButtonColor: '#ff3366',
+            customClass: { title: 'swal-danger-title' }
+          });
         } finally {
-            btn.disabled = false;
+          btn.disabled = false;
         }
-    }
+      }
 
-    function renderTable() {
-        const tb = document.getElementById('tbody');
-        tb.innerHTML = '';
+      function renderTable() {
+        const tb = document.getElementById("tbody");
+        tb.innerHTML = "";
+        
+        if (devices.length === 0) {
+            tb.innerHTML = `<tr><td colspan="6" style="color: #6a8a9a; text-align: center; padding: 40px" class="tech-font">No devices found.</td></tr>`;
+            return;
+        }
+
         devices.forEach((d, i) => {
-            const isAtk = attacked.has(d.ip);
-            const st = isAtk ? '<span class="badge attacked">ATTACKED</span>' : '<span class="badge online">ONLINE</span>';
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td style="color:#004a14">${String(i+1).padStart(2,'0')}</td>
-                <td>${d.ip}</td>
-                <td style="color:#008822">${d.mac}</td>
-                <td>${st}</td>
-                <td>
-                    <button class="actbtn atk" onclick="attack('${d.ip}')">PUTUS</button>
-                    <button class="actbtn stp" onclick="stop('${d.ip}')">STOP</button>
-                </td>`;
-            tb.appendChild(row);
-        });
-    }
+          const isAtk = attacked.has(d.ip);
+          const st = isAtk
+            ? '<span class="badge attacked"><i class="fa-solid fa-skull"></i> CUT OFF</span>'
+            : '<span class="badge online"><i class="fa-solid fa-wifi"></i> ONLINE</span>';
+          
+          let vendorDisplay = d.vendor || "Unknown";
+          if (vendorDisplay === "Broadcast") {
+             vendorDisplay = '<i class="fa-solid fa-bullhorn"></i> ' + vendorDisplay;
+          } else if (vendorDisplay === "Local Host") {
+             vendorDisplay = '<i class="fa-solid fa-server"></i> ' + vendorDisplay;
+          } else if (vendorDisplay.includes("Private Device") || vendorDisplay.toLowerCase().includes("iphone") || vendorDisplay.toLowerCase().includes("android")) {
+             vendorDisplay = '<i class="fa-solid fa-mobile-screen-button"></i> ' + vendorDisplay;
+          } else if (vendorDisplay !== "Unknown Brand") {
+             vendorDisplay = '<i class="fa-solid fa-microchip"></i> ' + vendorDisplay;
+          }
 
-    async function attack(ip) {
+          const row = document.createElement("tr");
+          row.className = "tech-font";
+          row.innerHTML = `
+                <td data-label="ID" style="color:var(--color-primary-dim)">#${String(i + 1).padStart(2, "0")}</td>
+                <td data-label="IP ADDRESS" style="font-weight:bold; color:var(--color-text-bright)">${d.ip}</td>
+                <td data-label="MAC ADDRESS" style="color:#6a8a9a">${d.mac}</td>
+                <td data-label="IDENTITAS" style="color:rgba(0, 255, 102, 0.7); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${d.vendor}">${vendorDisplay}</td>
+                <td data-label="STATUS">${st}</td>
+                <td data-label="AKSI">
+                    <button class="actbtn atk" onclick="confirmAttack('${d.ip}')">
+                        <i class="fa-solid fa-scissors"></i> PUTUS
+                    </button>
+                    ${isAtk ? `<button class="actbtn stop" onclick="stop('${d.ip}')"><i class="fa-solid fa-rotate-left"></i> PULIHKAN</button>` : ''}
+                </td>
+          `;
+          tb.appendChild(row);
+        });
+      }
+
+      function confirmAttack(ip) {
+        Swal.fire({
+          title: 'TARGET LOCKED',
+          text: `Are you sure you want to cut connection for ${ip}?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ff3366',
+          cancelButtonColor: '#1a2a3a',
+          confirmButtonText: '<i class="fa-solid fa-skull"></i> EXECUTE PUTUS',
+          cancelButtonText: 'CANCEL',
+          background: '#0a1118',
+          customClass: { title: 'swal-danger-title' }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            attack(ip);
+          }
+        });
+      }
+
+      async function attack(ip) {
         attacked.add(ip);
         renderTable();
-        addLog(`ARP poison injected → ${ip}`, 'warn');
-        await fetch('/attack', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ip})
+        addLog(`ARP poison injected → ${ip}`, "warn");
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Poison Injected',
+          text: `Connection effectively cut for ${ip}`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          background: '#0a1118',
+          iconColor: '#ff3366',
+          color: '#ff3366'
         });
-    }
 
-    async function stop(ip) {
+        await fetch("/attack", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ip }),
+        });
+      }
+
+      async function stop(ip) {
         attacked.delete(ip);
         renderTable();
-        addLog(`Stopped attack on ${ip}`, 'info');
-        await fetch('/stop', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ip})
+        addLog(`Stopped attack on ${ip}. Restoring ARP tables...`, "info");
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Attack Stopped',
+          text: `Restoring network for ${ip}`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          background: '#0a1118',
+          iconColor: '#00ff66',
+          color: '#00ff66'
         });
-    }
-    
-    // Spider Web Canvas (Kept as is for aesthetics)
-    (function spiderWeb() {
-        const cv = document.getElementById('spider');
-        const ctx = cv.getContext('2d');
-        function resize() { cv.width = window.innerWidth; cv.height = window.innerHeight; }
-        resize();
-        window.addEventListener('resize', resize);
-        const nodes = [];
-        for (let i = 0; i < 22; i++) { nodes.push({ x: Math.random(), y: Math.random(), vx: (Math.random() - .5) * .0003, vy: (Math.random() - .5) * .0003 }); }
-        function draw() {
-            const w = cv.width, h = cv.height;
-            ctx.clearRect(0, 0, w, h);
-            ctx.strokeStyle = '#00ff41'; ctx.lineWidth = .5;
-            for (let a = 0; a < nodes.length; a++) {
-                for (let b = a + 1; b < nodes.length; b++) {
-                    const dx = (nodes[a].x - nodes[b].x) * w, dy = (nodes[a].y - nodes[b].y) * h;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 240) { ctx.globalAlpha = (1 - dist / 240) * .6; ctx.beginPath(); ctx.moveTo(nodes[a].x * w, nodes[a].y * h); ctx.lineTo(nodes[b].x * w, nodes[b].y * h); ctx.stroke(); }
-                }
-            }
-            ctx.globalAlpha = 1; nodes.forEach(n => { ctx.beginPath(); ctx.arc(n.x * w, n.y * h, 2, 0, Math.PI * 2); ctx.fillStyle = '#00ff41'; ctx.fill(); });
+
+        await fetch("/stop", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ip }),
+        });
+      }
+
+      // Background Animation
+      (function spiderWeb() {
+        const cv = document.getElementById("spider");
+        const ctx = cv.getContext("2d");
+        function resize() {
+          cv.width = window.innerWidth;
+          cv.height = window.innerHeight;
         }
-        function tick() { nodes.forEach(n => { n.x += n.vx; n.y += n.vy; if (n.x < 0 || n.x > 1) n.vx *= -1; if (n.y < 0 || n.y > 1) n.vy *= -1; }); draw(); requestAnimationFrame(tick); }
+        resize();
+        window.addEventListener("resize", resize);
+        const nodes = [];
+        for (let i = 0; i < 30; i++) {
+          nodes.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.0005,
+            vy: (Math.random() - 0.5) * 0.0005,
+          });
+        }
+        function draw() {
+          const w = cv.width,
+            h = cv.height;
+          ctx.clearRect(0, 0, w, h);
+          ctx.strokeStyle = "#00ff66";
+          ctx.lineWidth = 0.5;
+          for (let a = 0; a < nodes.length; a++) {
+            for (let b = a + 1; b < nodes.length; b++) {
+              const dx = (nodes[a].x - nodes[b].x) * w,
+                dy = (nodes[a].y - nodes[b].y) * h;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < 280) {
+                ctx.globalAlpha = (1 - dist / 280) * 0.4;
+                ctx.beginPath();
+                ctx.moveTo(nodes[a].x * w, nodes[a].y * h);
+                ctx.lineTo(nodes[b].x * w, nodes[b].y * h);
+                ctx.stroke();
+              }
+            }
+          }
+          ctx.globalAlpha = 1;
+          nodes.forEach((n) => {
+            ctx.beginPath();
+            ctx.arc(n.x * w, n.y * h, 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#00ff66";
+            ctx.fill();
+          });
+        }
+        function tick() {
+          nodes.forEach((n) => {
+            n.x += n.vx;
+            n.y += n.vy;
+            if (n.x < 0 || n.x > 1) n.vx *= -1;
+            if (n.y < 0 || n.y > 1) n.vy *= -1;
+          });
+          draw();
+          requestAnimationFrame(tick);
+        }
         tick();
-    })();
-</script>
-</body>
+      })();
+    </script>
+  </body>
 </html>
