@@ -483,6 +483,7 @@
               <th><i class="fa-solid fa-microchip"></i> MAC ADDRESS</th>
               <th><i class="fa-solid fa-tag"></i> MEREK/VENDOR</th>
               <th><i class="fa-solid fa-heart-pulse"></i> STATUS</th>
+              <th><i class="fa-solid fa-gauge-high"></i> LATENCY</th>
               <th><i class="fa-solid fa-bolt"></i> AKSI</th>
             </tr>
           </thead>
@@ -543,6 +544,27 @@
             doScan();
         }
       }, 300000);
+
+      const pings = {};
+      async function updatePing(ip) {
+          try {
+              const res = await fetch(`/ping/${ip}`);
+              const data = await res.json();
+              const el = document.getElementById(`ping-${ip.replace(/\./g, '-')}`);
+              if (el) {
+                  el.textContent = data.latency;
+                  el.className = data.status === "Online" ? "status-value" : "status-value text-danger";
+                  if (data.status === "Offline") {
+                      addLog(`Connectivity alert: ${ip} is non-responsive to ICMP.`, "warn");
+                  }
+              }
+          } catch (e) { console.error("Ping error", e); }
+      }
+
+      function pingAll() {
+          devices.forEach(d => updatePing(d.ip));
+      }
+      setInterval(pingAll, 15000);
 
       function updateClock() {
         document.getElementById("clk").textContent = new Date().toLocaleTimeString("id-ID");
@@ -652,6 +674,7 @@
                 <td data-label="MAC ADDRESS" style="color:#6a8a9a">${d.mac}</td>
                 <td data-label="IDENTITAS" style="color:rgba(0, 255, 102, 0.7); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${d.vendor}">${vendorDisplay}</td>
                 <td data-label="STATUS">${st}</td>
+                <td data-label="LATENCY" class="tech-font"><span id="ping-${d.ip.replace(/\./g, '-')}" class="status-value">---</span></td>
                 <td data-label="AKSI">
                     <button class="actbtn atk" onclick="confirmAttack('${d.ip}')">
                         <i class="fa-solid fa-scissors"></i> PUTUS

@@ -252,6 +252,23 @@ def scan():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/ping/<ip>')
+def ping(ip):
+    """Pings a specific device and returns latency."""
+    try:
+        # Use ping -n 1 -w 1000 for a single packet on Windows
+        # Output is like: "... time=5ms ..."
+        output = subprocess.check_output(f"ping -n 1 -w 1000 {ip}", shell=True).decode()
+        if "time=" in output:
+            # Extract time=Xms
+            time_str = output.split("time=")[1].split("ms")[0].strip()
+            return jsonify({"status": "Online", "latency": f"{time_str}ms"})
+        elif "time<" in output:
+             return jsonify({"status": "Online", "latency": "<1ms"})
+        return jsonify({"status": "Offline", "latency": "TIMEOUT"})
+    except:
+        return jsonify({"status": "Offline", "latency": "OFF"})
+
 @app.route('/attack', methods=['POST'])
 def attack():
     if not conf.use_pcap:
