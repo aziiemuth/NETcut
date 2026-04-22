@@ -6,6 +6,7 @@ import socket
 import os
 import subprocess
 import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from mac_vendor_lookup import AsyncMacLookup
 
 app = Flask(__name__)
@@ -206,6 +207,8 @@ def scan():
         devices[0]['subnet'] = subnet # Pass subnet info to frontend
         result = subprocess.check_output("arp -a", shell=True).decode()
         
+        # Collect detected devices from ARP table
+        potential_devices = []
         for line in result.splitlines():
             if "dynamic" in line or "static" in line:
                 parts = line.split()
@@ -213,29 +216,37 @@ def scan():
                     ip = parts[0]
                     mac = parts[1]
                     if ip.startswith(subnet):
-                        name = get_device_name(ip)
-                        vendor = get_vendor(mac)
-                        
-                        # Smart Identity logic:
-                        if name:
-                            # If we have a name, use it. If we also have a vendor, show both.
-                            if vendor and vendor not in ['Private Device (Android/iOS)', 'Unknown Brand', 'Broadcast']:
-                                full_identity = f"{name} ({vendor})"
-                            else:
-                                full_identity = name
-                        else:
-                            # Fallback to vendor or generic label
-                            full_identity = vendor
-                            
-                        # Verification: Check if device is still reachable (live)
-                        # We send a single targeted ARP request
-                        arp_reply = srp1(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip), timeout=0.3, verbose=False, retry=0)
-                        
-                        if arp_reply:
-                            devices.append({'ip': ip, 'mac': mac, 'vendor': full_identity})
-                        else:
-                            # If no ARP reply, device might be off. Skip it.
-                            continue
+                        potential_devices.append((ip, mac))
+        
+        # Define verification function for parallel execution
+        def verify_device(ip, mac):
+            name = get_device_name(ip)
+            vendor = get_vendor(mac)
+            
+            # Identity labeling
+            if name:
+                if vendor and vendor not in ['Private Device (Android/iOS)', 'Unknown Brand', 'Broadcast']:
+                    full_identity = f"{name} ({vendor})"
+                else:
+                    full_identity = name
+            else:
+                full_identity = vendor
+                
+            # Robust Verification: 1.0s timeout, 2 retries
+            # Ether/ARP is more reliable than ICMP Ping
+            arp_reply = srp1(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip), timeout=1.0, verbose=False, retry=2)
+            
+            if arp_reply:
+                return {'ip': ip, 'mac': mac, 'vendor': full_identity}
+            return None
+
+        # Execute parallel verification
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(verify_device, ip, mac) for ip, mac in potential_devices]
+            for future in as_completed(futures):
+                dev = future.result()
+                if dev:
+                    devices.append(dev)
                         
         return jsonify(devices)
     except Exception as e:
