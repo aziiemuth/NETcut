@@ -5,10 +5,12 @@ Sebuah aplikasi berbasis Web untuk melakukan pemindaian jaringan (_Network Scann
 ## ✨ Fitur Utama
 
 - **Auto-Detection Network**: Otomatis mendeteksi Gateway (Router) dan Interface aktif saat berpindah WiFi.
-- **Smart Device Identification**: Mengungkap identitas perangkat menggunakan MAC Vendor Lookup, Hostname DNS, dan NetBIOS.
-- **Private Device Recognition**: Mendeteksi perangkat (Android/iOS) yang menggunakan fitur MAC Randomization.
+- **Deep Device Identification**: Mengungkap identitas perangkat menggunakan MAC Vendor Lookup, Hostname DNS, NetBIOS, dan **mDNS** (Multicast DNS).
+- **Private Device Recognition**: Mendeteksi perangkat (Android/iOS) yang menggunakan fitur MAC Randomization dengan label yang lebih akurat.
+- **Live Latency Monitoring**: Fitur Ping real-time untuk memantau kecepatan respon perangkat (ms) secara langsung.
+- **Auto-Refresh & Cleanup**: Otomatis menghapus perangkat yang offline dari daftar dan melakukan penyegaran data berkala.
 - **ARP Spoofing (PUTUS)**: Memutus koneksi internet target dalam satu klik.
-- **Premium UI**: Menggunakan Glassmorphism, FontAwesome 6, dan SweetAlert2 untuk interaksi yang mulus.
+- **Premium UI**: Menggunakan Glassmorphism, FontAwesome 6, dan SweetAlert2 untuk interaksi yang mulus dan responsif.
 
 ## 📋 Persyaratan Sistem
 
