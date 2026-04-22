@@ -434,8 +434,15 @@
         <div class="status-item">
           <i class="fa-solid fa-network-wired"></i>
           <div class="status-data">
-            <span class="status-label">Interface</span>
-            <span class="status-value">AUTO</span>
+            <span class="status-label">Interface IP</span>
+            <span class="status-value" id="hostIp">DETECTING...</span>
+          </div>
+        </div>
+        <div class="status-item">
+          <i class="fa-solid fa-gateway"></i>
+          <div class="status-data">
+            <span class="status-label">Gateway</span>
+            <span class="status-value" id="gatewayIp">DETECTING...</span>
           </div>
         </div>
         <div class="status-item">
@@ -498,7 +505,36 @@
 
     <script>
       let devices = [];
+      let lastHostIp = null;
+      let lastGatewayIp = null;
       const attacked = new Set();
+
+      async function checkNetworkStatus() {
+        try {
+          const res = await fetch("/status");
+          const data = await res.json();
+          
+          if (data.host_ip) {
+            document.getElementById("hostIp").textContent = data.host_ip;
+            document.getElementById("gatewayIp").textContent = data.gateway_ip || "UNKNOWN";
+            
+            // Auto-scan logic: if IP or Gateway changed, it's a new network
+            if (lastHostIp && (lastHostIp !== data.host_ip || lastGatewayIp !== data.gateway_ip)) {
+                addLog(`Network change detected: ${lastHostIp} -> ${data.host_ip}`, "info");
+                doScan(); 
+            }
+            
+            lastHostIp = data.host_ip;
+            lastGatewayIp = data.gateway_ip;
+          }
+        } catch (e) {
+          console.error("Status check failed", e);
+        }
+      }
+
+      // Check status every 5 seconds
+      setInterval(checkNetworkStatus, 5000);
+      checkNetworkStatus(); // Initial check
 
       function updateClock() {
         document.getElementById("clk").textContent = new Date().toLocaleTimeString("id-ID");

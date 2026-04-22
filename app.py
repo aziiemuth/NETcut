@@ -141,6 +141,24 @@ def spoof_loop(target_ip, gateway_ip):
         # Send packets faster to combat the real router's ARP broadcasts
         time.sleep(1)
 
+@app.route('/status')
+def status():
+    """Returns current network status for the frontend."""
+    host_ip, gateway_ip = get_network_info()
+    iface = conf.iface if hasattr(conf, 'iface') else "Unknown"
+    # Convert iface object to string if necessary
+    if not isinstance(iface, str):
+        try:
+            iface = str(iface.name)
+        except:
+            iface = str(iface)
+
+    return jsonify({
+        "host_ip": host_ip,
+        "gateway_ip": gateway_ip,
+        "interface": iface
+    })
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -165,6 +183,7 @@ def scan():
         threading.Thread(target=ping_all).start()
         time.sleep(4)
         devices = [get_local_ip_mac(host_ip)]
+        devices[0]['subnet'] = subnet # Pass subnet info to frontend
         result = subprocess.check_output("arp -a", shell=True).decode()
         
         for line in result.splitlines():
