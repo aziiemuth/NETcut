@@ -227,7 +227,15 @@ def scan():
                             # Fallback to vendor or generic label
                             full_identity = vendor
                             
-                        devices.append({'ip': ip, 'mac': mac, 'vendor': full_identity})
+                        # Verification: Check if device is still reachable (live)
+                        # We send a single targeted ARP request
+                        arp_reply = srp1(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip), timeout=0.3, verbose=False, retry=0)
+                        
+                        if arp_reply:
+                            devices.append({'ip': ip, 'mac': mac, 'vendor': full_identity})
+                        else:
+                            # If no ARP reply, device might be off. Skip it.
+                            continue
                         
         return jsonify(devices)
     except Exception as e:
