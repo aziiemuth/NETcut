@@ -39,7 +39,8 @@ Aplikasi ini berjalan di **Windows** dan memerlukan beberapa komponen berikut:
     python app.py
     ```
 3.  Buka browser dan akses:
-    `http://127.0.0.1:5000`
+    - Lokal: `http://127.0.0.1:5000`
+    - Jaringan: `http://[IP_LAPTOP_ANDA]:5000` (Misal: `http://192.168.1.10:5000`)
 4.  Klik tombol **"SCAN JARINGAN"** untuk memulai.
 
 ## ⚠️ Disclaimer
