@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from scapy.all import ARP, Ether, srp, send, conf, IP, UDP, NBNSQueryRequest
+from scapy.all import ARP, Ether, srp, srp1, send, conf, IP, UDP, NBNSQueryRequest, DNS, DNSQR
 import threading
 import time
 import socket
@@ -66,9 +66,32 @@ def is_random_mac(mac):
     except:
         return False
 
+def get_mdns_name(ip):
+    """Tries to resolve device name via MDNS (Multicast DNS)."""
+    try:
+        # Reverse IP for PTR query (e.g. 1.1.168.192.in-addr.arpa)
+        rev_ip = ".".join(reversed(ip.split("."))) + ".in-addr.arpa"
+        pkt = IP(dst="224.0.0.251")/UDP(sport=5353, dport=5353)/DNS(rd=1, qd=DNSQR(qname=rev_ip, qtype="PTR"))
+        # Using srp1 for a single response
+        ans = srp1(pkt, timeout=0.8, verbose=False, retry=0)
+        if ans and ans.haslayer(DNS) and ans[DNS].ancount > 0:
+            # Look for the name in the answer section
+            for i in range(ans[DNS].ancount):
+                rdata = ans[DNS].an[i].rdata
+                if isinstance(rdata, bytes):
+                    name = rdata.decode().rstrip('.')
+                    if name: return name
+    except:
+        pass
+    return None
+
 def get_device_name(ip):
-    """Tries to resolve device name via DNS and NetBIOS."""
-    # 1. Try DNS/Hostname lookup
+    """Tries to resolve device name via DNS, NetBIOS, and MDNS."""
+    # 1. Try MDNS (Often very descriptive for Apple/Linux devices)
+    mdns_name = get_mdns_name(ip)
+    if mdns_name: return mdns_name
+
+    # 2. Try DNS/Hostname lookup
     try:
         hostname = socket.gethostbyaddr(ip)[0]
         if hostname and not hostname.replace('.', '').isdigit():
@@ -76,15 +99,12 @@ def get_device_name(ip):
     except:
         pass
 
-    # 2. Try NetBIOS (NBNS) - Works for Windows and many Androids
+    # 3. Try NetBIOS (NBNS) - Works for Windows and many Androids
     try:
-        # Send a NetBIOS Name Query to the device
-        # We use a broad QUESTION_NAME '*'
         pkt = IP(dst=ip)/UDP(sport=137, dport=137)/NBNSQueryRequest(QUESTION_NAME='*')
-        ans = srp(pkt, timeout=0.5, verbose=False, retry=0)[0]
+        ans = srp1(pkt, timeout=0.5, verbose=False, retry=0)
         if ans:
-             # Extract name from response
-             nb_name = ans[0][1].QUESTION_NAME.decode().strip()
+             nb_name = ans.QUESTION_NAME.decode().strip()
              if nb_name:
                  return nb_name
     except:
@@ -196,11 +216,15 @@ def scan():
                         name = get_device_name(ip)
                         vendor = get_vendor(mac)
                         
-                        # Smart Name logic: prioritize Hostname if available
-                        full_identity = name if name else vendor
-                        if name and vendor and vendor != 'Private Device (Android/iOS)' and vendor != 'Unknown Brand':
-                            full_identity = f"{name} ({vendor})"
-                        elif not name:
+                        # Smart Identity logic:
+                        if name:
+                            # If we have a name, use it. If we also have a vendor, show both.
+                            if vendor and vendor not in ['Private Device (Android/iOS)', 'Unknown Brand', 'Broadcast']:
+                                full_identity = f"{name} ({vendor})"
+                            else:
+                                full_identity = name
+                        else:
+                            # Fallback to vendor or generic label
                             full_identity = vendor
                             
                         devices.append({'ip': ip, 'mac': mac, 'vendor': full_identity})
