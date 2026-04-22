@@ -43,6 +43,16 @@ Aplikasi ini berjalan di **Windows** dan memerlukan beberapa komponen berikut:
     - Jaringan: `http://[IP_LAPTOP_ANDA]:5000` (Misal: `http://192.168.1.10:5000`)
 4.  Klik tombol **"SCAN JARINGAN"** untuk memulai.
 
+## ⚠️ Troubleshoot Fitur "PUTUS"
+
+Jika tombol **"PUTUS"** tidak mempan (perangkat target masih bisa internet), periksa hal berikut:
+
+1.  **IP Forwarding**: Pastikan fitur ini **MATI** di Windows agar laptop Anda tidak meneruskan paket data korban ke router.
+    - Cek via PowerShell (Admin): `Get-NetIPInterface | select ifIndex,InterfaceAlias,AddressFamily,Forwarding`
+    - Jika `Forwarding` adalah `Enabled`, matikan dengan: `Set-NetIPInterface -Forwarding Disabled`
+2.  **Frekuensi Spoofing**: Versi v3.1 sudah meningkatkan frekuensi menjadi 0.3s agar lebih agresif.
+3.  **Antivirus/Firewall**: Beberapa antivirus modern (seperti Kaspersky/Bitdefender) bisa memblokir aktivitas ARP Spoofing dari laptop Anda. Matikan sementara fitur "Network Attack Blocker" jika ada.
+
 ## ⚠️ Disclaimer
 
 Aplikasi ini dibuat untuk tujuan edukasi dan pengujian keamanan jaringan legal. Penggunaan aplikasi ini pada jaringan orang lain tanpa izin adalah tindakan ilegal. Pembuat tidak bertanggung jawab atas penyalahgunaan aplikasi ini.

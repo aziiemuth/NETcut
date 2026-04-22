@@ -519,6 +519,28 @@
             document.getElementById("hostIp").textContent = data.host_ip;
             document.getElementById("gatewayIp").textContent = data.gateway_ip || "UNKNOWN";
             
+            // Sync attack state from backend
+            if (data.attacked_ips) {
+                let changed = false;
+                // Add new attacks from server
+                data.attacked_ips.forEach(ip => {
+                    if (!attacked.has(ip)) {
+                        attacked.add(ip);
+                        changed = true;
+                    }
+                });
+                // Remove stopped attacks from server
+                attacked.forEach(ip => {
+                    if (!data.attacked_ips.includes(ip)) {
+                        attacked.delete(ip);
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    renderTable();
+                }
+            }
+
             // Auto-scan logic: if IP or Gateway changed, it's a new network
             if (lastHostIp && (lastHostIp !== data.host_ip || lastGatewayIp !== data.gateway_ip)) {
                 addLog(`Network change detected: ${lastHostIp} -> ${data.host_ip}`, "info");
