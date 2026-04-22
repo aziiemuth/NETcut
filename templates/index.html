@@ -536,13 +536,13 @@
       setInterval(checkNetworkStatus, 5000);
       checkNetworkStatus(); // Initial check
 
-      // Auto-Scan every 30 seconds to remove offline devices
+      // Auto-Scan every 5 minutes to remove offline devices
       setInterval(() => {
         if (document.getElementById("st").textContent !== "SCANNING...") {
             addLog("Periodic health check: refreshing device list...", "info");
             doScan();
         }
-      }, 30000);
+      }, 300000);
 
       function updateClock() {
         document.getElementById("clk").textContent = new Date().toLocaleTimeString("id-ID");
